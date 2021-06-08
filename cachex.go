@@ -2,7 +2,9 @@ package cachex
 
 import (
 	"container/list"
+	"errors"
 	"sync"
+	"time"
 )
 
 type Cachex interface {
@@ -19,7 +21,7 @@ type Cache struct {
 
 type baseCache struct {
 	header *header
-	body   []byte
+	body   []byte //snappy / gzip Compress
 }
 type header struct {
 	key, tag   string
@@ -42,9 +44,44 @@ func (c *Cache) Set(key string, value []byte) error {
 		c.Cache = make(map[interface{}]*list.Element, c.CacheSize)
 		c.CacheList = list.New() //init list
 	}
+	// check Cache len
+	if c.CacheSize <= len(key)+len(value) || c.CacheSize == 0 {
+		return errors.New("Cache is full")
+	}
+	// Expire oldest form Cache
+	if c.CacheList.Len() > c.CacheSize {
+		// clean ....
+	}
+	// assert key is existed...
+	if element, existed := c.Cache[key]; existed {
+		//c.CacheList.PushBack(element)
+		// the left side data is best new data ... lru
+		c.CacheList.MoveToFront(element)
+		element.Value.(*baseCache).body = value
+		return nil
+	}
+	// key not exist
+	element := c.CacheList.PushFront(
+		&baseCache{
+			header: &header{
+				ttl:        0,
+				key:        key,
+				tag:        "",
+				createTime: time.Now().UnixNano(),
+			},
+			body: value,
+		},
+	)
+	c.Cache[key] = element
 	return nil
 }
 
 func (c *Cache) Get(key string) ([]byte, error) {
-	return nil, nil
+	c.Mu.RLock()
+	defer c.Mu.RUnlock()
+	if element, ok := c.Cache[key]; ok {
+		c.CacheList.MoveToFront(element) //lru
+		return element.Value.(*baseCache).body, nil
+	}
+	return nil, errors.New("The key is exist")
 }
