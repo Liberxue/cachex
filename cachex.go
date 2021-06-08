@@ -51,6 +51,7 @@ func (c *Cache) Set(key string, value []byte) error {
 	// Expire oldest form Cache
 	if c.CacheList.Len() > c.CacheSize {
 		// clean ....
+		c.cleanExpireOldestCache()
 	}
 	// assert key is existed...
 	if element, existed := c.Cache[key]; existed {
@@ -84,4 +85,17 @@ func (c *Cache) Get(key string) ([]byte, error) {
 		return element.Value.(*baseCache).body, nil
 	}
 	return nil, errors.New("The key is exist")
+}
+
+func (c *Cache) cleanExpireOldestCache() {
+	c.Mu.RLock()
+	defer c.Mu.RUnlock()
+	element := c.CacheList.Back()
+
+	if element != nil {
+		c.CacheList.Remove(element)
+		key := element.Value.(*baseCache).header.key
+		delete(c.Cache, key)
+	}
+	return
 }
