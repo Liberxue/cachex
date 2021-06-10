@@ -15,7 +15,8 @@ var (
 
 func init() {
 	once.Do(func() {
-		c = NewCache(102400)
+		c = NewCache(102400, 2)
+		_ = c.startCleanExpireOldestCache
 	})
 }
 
@@ -112,9 +113,9 @@ func randSeq(n int) string {
 }
 
 func BenchmarkCache_Set(b *testing.B) {
-	cacheInstance := NewCache(256)
+	cacheInstance := NewCache(10e6, 1)
 	for n := 0; n < b.N; n++ {
 		cacheInstance.Set(fmt.Sprint(n%1000000), []byte("value"))
-		// cacheInstance.Get(fmt.Sprint(n % 1000000))
+		cacheInstance.Get(fmt.Sprint(n % 1000000))
 	}
 }

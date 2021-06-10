@@ -44,9 +44,10 @@ type header struct {
 //NewCache Cache
 //input cacheLen uint
 //return *Cache
-func NewCache(cacheLen uint) *Cache {
+func NewCache(cacheLen, ttl uint) *Cache {
 	return &Cache{
 		CacheLen:  cacheLen,
+		TTL:       ttl,
 		CacheList: list.New().Init(), //clean list && init list
 		Cache:     make(map[interface{}]*list.Element, cacheLen),
 	}
@@ -111,8 +112,8 @@ func (c *Cache) Get(key string) ([]byte, error) {
 
 // cleanExpireOldestCache
 func (c *Cache) cleanExpireOldestCache() {
-	// c.Mu.RLock()
-	// defer c.Mu.RUnlock()
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
 	element := c.CacheList.Back()
 	if element != nil {
 		c.CacheList.Remove(element)
@@ -136,11 +137,14 @@ func (c *Cache) cleanExpireOldestCacheByTTL(nowTime int64) {
 
 // start Clean ExpireOldest Cache Job...
 func (c *Cache) startCleanExpireOldestCache() {
+	if c.TTL <= 1 {
+		return
+	}
 	timer := time.NewTimer(time.Second)
-	go func() {
+	go func(timer *time.Timer) {
 		c.cleanExpireOldestCacheByTTL(time.Now().UnixNano())
 		<-timer.C
-	}()
+	}(timer)
 	timer.Reset(0 * time.Second)
 	time.Sleep(time.Second * time.Duration(c.TTL))
 }
