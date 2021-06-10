@@ -28,12 +28,15 @@ jobs:
 
       - name: Run Unit tests
         run: |
-          go test -race -covermode atomic -coverprofile=covprofile ./...
+          go install -race std
+          go get golang.org/x/tools/cmd/cover
+          go get github.com/mattn/goveralls
+          go test -cover -race -count=1 -timeout=30s -run .
+          go test -covermode=count -coverprofile=coverage.out -timeout=90s -run .
+          go test -benchmem -run=^$  -bench=. -benchmem
       - name: Install goveralls
         env:
           GO111MODULE: off
         run: go get github.com/mattn/goveralls
       - name: Send coverage
-        env:
-          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-        run: goveralls -coverprofile=covprofile -service=github
+        run: goveralls -coverprofile=coverage.out -service=travis-ci -repotoken  ${{ secrets.COVERALLS_TOKEN }}
