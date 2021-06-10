@@ -6,7 +6,7 @@
 [![Build Status](https://travis-ci.org/Liberxue/cachex.svg?branch=master)](https://travis-ci.org/github/Liberxue/cachex)
 [![GoDoc](https://godoc.org/github.com/Liberxue/cachex?status.svg)](https://godoc.org/github.com/Liberxue/cachex)
 [![GitHub issues](https://img.shields.io/github/issues/Liberxue/cachex.svg)](https://github.com/Liberxue/cachex/issues)
-[![Coverage Status](https://coveralls.io/repos/github/Liberxue/cachex/cachex.svg?branch=master)](https://coveralls.io/github/Liberxue/cachex?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/Liberxue/cachex/badge.svg)](https://coveralls.io/github/Liberxue/cachex)
 [![license](https://img.shields.io/github/license/Liberxue/cachex.svg?maxAge=2592000)](https://github.com/Liberxue/cachex/blob/main/LICENSE)
 
 ## snappy example 
