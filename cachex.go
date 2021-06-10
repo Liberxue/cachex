@@ -7,35 +7,43 @@ import (
 	"time"
 )
 
+// ExpireCallBackNotice -> Expire CallBack Notice
 type ExpireCallBackNotice func(key string, value []byte) bool
 
+// CheckExpireCallback -> Check Expire CallBack Notice
 type CheckExpireCallback func(key string, value []byte)
+
+// Cachex interface
 type Cachex interface {
 	Set(key string, value []byte)
 	Get(key string) ([]byte, error)
 }
 
+// Cache struct
 type Cache struct {
 	Mu        sync.RWMutex
-	TTl       uint
+	TTL       uint
 	CacheLen  uint
 	Cache     map[interface{}]*list.Element
 	CacheList *list.List
 }
 
+// Cache Protocol
 type baseCache struct {
 	header *header
 	body   []byte //snappy / gzip Compress
 }
+
+// Cache Header
 type header struct {
 	key, tag   string
-	ttl        uint
+	TTL        uint
 	createTime int64
 }
 
-// New Cache init list
-// @input cacheLen int
-// @return *Cache
+//NewCache Cache
+//input cacheLen uint
+//return *Cache
 func NewCache(cacheLen uint) *Cache {
 	return &Cache{
 		CacheLen:  cacheLen,
@@ -44,9 +52,9 @@ func NewCache(cacheLen uint) *Cache {
 	}
 }
 
-// SetCache
-// @input key string,value []byte
-// return error
+//Set Cache
+//input key string,value []byte
+//return error
 func (c *Cache) Set(key string, value []byte) error {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
@@ -76,7 +84,7 @@ func (c *Cache) Set(key string, value []byte) error {
 	element := c.CacheList.PushFront(
 		&baseCache{
 			header: &header{
-				ttl:        0,
+				TTL:        0,
 				key:        key,
 				tag:        "",
 				createTime: time.Now().UnixNano(),
@@ -88,9 +96,9 @@ func (c *Cache) Set(key string, value []byte) error {
 	return nil
 }
 
-// GetCacheByKey
-// @input key string
-// return []byte,error
+//Get Cache
+//input key string
+//return []byte,error
 func (c *Cache) Get(key string) ([]byte, error) {
 	c.Mu.RLock()
 	defer c.Mu.RUnlock()
@@ -113,14 +121,14 @@ func (c *Cache) cleanExpireOldestCache() {
 	}
 }
 
-//
-func (c *Cache) cleanExpireOldestCacheByTTl(nowTime int64) {
+// cleanExpireOldestCacheByTTL
+func (c *Cache) cleanExpireOldestCacheByTTL(nowTime int64) {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
 	// o(n)
 	for element := c.CacheList.Back(); element != nil; element = element.Next() {
 		val := element.Value.(*baseCache)
-		if int64(val.header.ttl)+val.header.createTime < nowTime {
+		if int64(val.header.TTL)+val.header.createTime < nowTime {
 			delete(c.Cache, val.header.key)
 		}
 	}
@@ -130,9 +138,9 @@ func (c *Cache) cleanExpireOldestCacheByTTl(nowTime int64) {
 func (c *Cache) startCleanExpireOldestCache() {
 	timer := time.NewTimer(time.Second)
 	go func() {
-		c.cleanExpireOldestCacheByTTl(time.Now().UnixNano())
+		c.cleanExpireOldestCacheByTTL(time.Now().UnixNano())
 		<-timer.C
 	}()
 	timer.Reset(0 * time.Second)
-	time.Sleep(time.Second * time.Duration(c.TTl))
+	time.Sleep(time.Second * time.Duration(c.TTL))
 }
