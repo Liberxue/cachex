@@ -26,11 +26,11 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			// decoded, err := snappy.Decode(nil, encoded)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
-			//fmt.Println(decoded)
+			decoded, err := snappy.Decode(nil, encoded)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(decoded)
 		}
 		ch <- 1
 	}()
