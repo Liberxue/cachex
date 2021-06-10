@@ -33,6 +33,7 @@ type header struct {
 //
 // @return *Cache
 func NewCache(cacheLen int) *Cache {
+	// go startCleanExpireOldestCache()
 	return &Cache{
 		CacheLen:  cacheLen,
 		CacheList: list.New().Init(), //clean list && init list
