@@ -14,7 +14,7 @@ type Cachex interface {
 
 type Cache struct {
 	Mu        sync.RWMutex
-	CacheSize int
+	CacheLen  int
 	Cache     map[interface{}]*list.Element
 	CacheList *list.List
 }
@@ -29,27 +29,33 @@ type header struct {
 	createTime int64
 }
 
-func NewCache(cacheSize int) *Cache {
+// New Cache init list
+//
+// @return *Cache
+func NewCache(cacheLen int) *Cache {
 	return &Cache{
-		CacheSize: cacheSize,
+		CacheLen:  cacheLen,
 		CacheList: list.New().Init(), //clean list && init list
-		Cache:     make(map[interface{}]*list.Element, cacheSize),
+		Cache:     make(map[interface{}]*list.Element, cacheLen),
 	}
 }
 
+// SetCache
+// @input key string,value []byte
+// return error
 func (c *Cache) Set(key string, value []byte) error {
-	c.Mu.RLock()
-	defer c.Mu.RUnlock()
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
 	if c.Cache == nil {
-		c.Cache = make(map[interface{}]*list.Element, c.CacheSize)
+		c.Cache = make(map[interface{}]*list.Element, c.CacheLen)
 		c.CacheList = list.New() //init list
 	}
 	// check Cache len
-	if c.CacheSize <= len(key)+len(value) || c.CacheSize == 0 {
-		return errors.New("Cache is full")
+	if c.CacheLen == 0 {
+		return errors.New("cacheLen is 0")
 	}
 	// Expire oldest form Cache
-	if c.CacheList.Len() > c.CacheSize {
+	if c.CacheList.Len() > c.CacheLen {
 		// clean ....
 		c.cleanExpireOldestCache()
 	}
@@ -77,6 +83,9 @@ func (c *Cache) Set(key string, value []byte) error {
 	return nil
 }
 
+// GetCacheByKey
+// @input key string
+// return []byte,error
 func (c *Cache) Get(key string) ([]byte, error) {
 	c.Mu.RLock()
 	defer c.Mu.RUnlock()
@@ -84,18 +93,17 @@ func (c *Cache) Get(key string) ([]byte, error) {
 		c.CacheList.MoveToFront(element) //lru
 		return element.Value.(*baseCache).body, nil
 	}
-	return nil, errors.New("The key is exist")
+	return nil, errors.New("key is exist")
 }
 
+// cleanExpireOldestCache
 func (c *Cache) cleanExpireOldestCache() {
-	c.Mu.RLock()
-	defer c.Mu.RUnlock()
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
 	element := c.CacheList.Back()
-
 	if element != nil {
 		c.CacheList.Remove(element)
 		key := element.Value.(*baseCache).header.key
 		delete(c.Cache, key)
 	}
-	return
 }
