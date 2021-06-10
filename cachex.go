@@ -103,8 +103,8 @@ func (c *Cache) Get(key string) ([]byte, error) {
 
 // cleanExpireOldestCache
 func (c *Cache) cleanExpireOldestCache() {
-	c.Mu.Lock()
-	defer c.Mu.Unlock()
+	// c.Mu.RLock()
+	// defer c.Mu.RUnlock()
 	element := c.CacheList.Back()
 	if element != nil {
 		c.CacheList.Remove(element)

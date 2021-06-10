@@ -1,6 +1,7 @@
 package cachex
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"sync"
@@ -8,18 +9,14 @@ import (
 )
 
 var (
-	cacheInstance *Cache
-	once          sync.Once
-	C             *Cache
+	c    *Cache
+	once sync.Once
 )
 
 func init() {
-	var c *Cache
 	once.Do(func() {
-		c = NewCache(1024)
-		cacheInstance = new(Cache)
+		c = NewCache(102400)
 	})
-	C = c
 }
 
 func TestCache_Set(t *testing.T) {
@@ -27,8 +24,8 @@ func TestCache_Set(t *testing.T) {
 	keys := [][]byte{[]byte("hello01"), []byte("hello02")}
 	for k, v := range values {
 		key := string(keys[k])
-		C.Set(key, v)
-		val, err := C.Get(key)
+		c.Set(key, v)
+		val, err := c.Get(key)
 		if err != nil {
 			t.Fatalf("Expect key:%v ,Value:%v ,Error:%v", key, v, err)
 		}
@@ -42,7 +39,7 @@ func TestCache_Set(t *testing.T) {
 func TestCache_Get(t *testing.T) {
 	assertSuccessKey := "1234"
 	assertSuccessValue := []byte{49, 50, 51, 52, 53}
-	C.Set(assertSuccessKey, assertSuccessValue)
+	c.Set(assertSuccessKey, assertSuccessValue)
 	type args struct {
 		key string
 	}
@@ -55,7 +52,7 @@ func TestCache_Get(t *testing.T) {
 	}{
 		{
 			name:   "Success",
-			fields: C,
+			fields: c,
 			args: args{
 				key: assertSuccessKey,
 			},
@@ -64,7 +61,7 @@ func TestCache_Get(t *testing.T) {
 		},
 		{
 			name:   "FailbyKeyExist",
-			fields: C,
+			fields: c,
 			args: args{
 				key: "111111",
 			},
@@ -74,7 +71,7 @@ func TestCache_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := C.Get(tt.args.key)
+			got, err := c.Get(tt.args.key)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Cache.Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -91,9 +88,9 @@ func TestCache_cleanExpireOldestCache(t *testing.T) {
 	keys := [][]byte{[]byte("hello01"), []byte("hello02"), []byte("hello03")}
 	for k, v := range values {
 		key := string(keys[k])
-		C.Set(key, v)
-		val, err := C.Get(key)
-		C.cleanExpireOldestCache()
+		c.Set(key, v)
+		val, err := c.Get(key)
+		c.cleanExpireOldestCache()
 		if err != nil {
 			t.Fatalf("Expect key:%v ,Value:%v ,Error:%v", key, v, err)
 		}
@@ -112,4 +109,12 @@ func randSeq(n int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+func BenchmarkCache_Set(b *testing.B) {
+	cacheInstance := NewCache(256)
+	for n := 0; n < b.N; n++ {
+		cacheInstance.Set(fmt.Sprint(n%1000000), []byte("value"))
+		// cacheInstance.Get(fmt.Sprint(n % 1000000))
+	}
 }
