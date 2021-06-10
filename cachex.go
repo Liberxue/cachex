@@ -133,5 +133,6 @@ func (c *Cache) startCleanExpireOldestCache() {
 		c.cleanExpireOldestCacheByTTl(time.Now().UnixNano())
 		<-timer.C
 	}()
+	timer.Reset(0 * time.Second)
 	time.Sleep(time.Second * time.Duration(c.TTl))
 }
