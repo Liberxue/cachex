@@ -1,10 +1,9 @@
-name: Go
-
+name: Tests
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -15,23 +14,23 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
 
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Check formatting
-      if: matrix.go-version == '1.16' && matrix.platform == 'ubuntu-latest'
-      run: diff -u <(echo -n) <(go fmt $(go list ./...))
+      - name: Check formatting
+        if: matrix.go-version == '1.16' && matrix.platform == 'ubuntu-latest'
+        run: diff -u <(echo -n) <(go fmt $(go list ./...))
 
-    - name: Check module vendoring
-      if: matrix.go-version == '1.16' && matrix.platform == 'ubuntu-latest'
-      run: |
-        go mod tidy
-        go mod vendor
-        git diff --exit-code || exit 1
-    - name: Run unit tests
-      run: go test -v ./...
+      - name: Check module vendoring
+        if: matrix.go-version == '1.16' && matrix.platform == 'ubuntu-latest'
+        run: |
+          go mod tidy
+          go mod vendor
+          git diff --exit-code || exit 1
+      - name: Run unit tests
+        run: go test -v ./...
